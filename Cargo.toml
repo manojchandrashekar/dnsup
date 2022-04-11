@@ -1,0 +1,22 @@
+[package]
+name = "dnsup"
+version = "0.1.0"
+edition = "2021"
+authors = ["Manoj Chandrashekar <manoj.chandrashekar@outlook.com>"]
+license = "MIT"
+description = "A tool to keep domains up-to-date with dynamic IPs"
+readme = "README.md"
+homepage = "https://github.com/manojchandrashekar/dnsup"
+repository = "https://github.com/manojchandrashekar/dnsup"
+keywords = ["cli", "dns", "dynamic-ip"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+dotenv = "0.15.0"
+argparse = "0.2.2"
+dirs = "4.0"
+toml = "0.5.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11.10", features = ["blocking", "json"] }
+tokio = { version = "1.17.0", features = ["full"] }

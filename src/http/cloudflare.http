@@ -1,0 +1,27 @@
+GET https://api.cloudflare.com/client/v4/user/tokens/verify
+X-Auth-Email: {{$dotenv CF_AUTH_EMAIL}}
+Authorization: Bearer {{$dotenv CF_AUTH_TOKEN}}
+Content-Type: application/json
+
+###
+
+GET https://api.cloudflare.com/client/v4/zones?status=active&account.id={{$dotenv CF_ACCOUNT_ID}}&page=1&per_page=50&order=status&match=all
+X-Auth-Email: {{$dotenv CF_AUTH_EMAIL}}
+Authorization: Bearer {{$dotenv CF_AUTH_TOKEN}}
+Content-Type: application/json
+
+###
+
+GET https://api.cloudflare.com/client/v4/zones/ad665cba05df759c3aa3a17e64ee825b/dns_records?type=A&page=1&per_page=100&order=type&direction=desc&match=all
+X-Auth-Email: {{$dotenv CF_AUTH_EMAIL}}
+Authorization: Bearer {{$dotenv CF_AUTH_TOKEN}}
+Content-Type: application/json
+
+###
+
+PATCH https://api.cloudflare.com/client/v4/zones/ad665cba05df759c3aa3a17e64ee825b/dns_records/678ff25ff04d58d573341bf71c2bb256
+X-Auth-Email: {{$dotenv CF_AUTH_EMAIL}}
+Authorization: Bearer {{$dotenv CF_AUTH_TOKEN}}
+Content-Type: application/json
+
+{"type":"A","name":"bassy.live","content":"127.0.0.2","ttl":3600,"proxied":false}
