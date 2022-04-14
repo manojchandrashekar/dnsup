@@ -1,0 +1,10 @@
+version = "1" # For handling changes in config structure
+
+[lookup]
+method = "dig" # Provision for additional methods in the future
+provider = "opendns"
+
+[cloudflare]
+auth_token = "cloudflare-auth-token"
+account_id = "cloudflare-account-id"
+domains = "comma-separated-domain-names-to-set-A-record-for"

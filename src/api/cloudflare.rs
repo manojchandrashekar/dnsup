@@ -77,10 +77,6 @@ pub async fn execute(
     user_config: &UserConfig,
     app_config: &AppConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Get all Vec<zones>
-    // 2. Iter over zones and match on name with domain/subdomain split.
-    // 3. If match found, execute DNS update
-    // 4. Collect failures and report
     vlog("Processing cloudflare: get all zones", app_config);
     let cloudflare = user_config.cloudflare.as_ref().unwrap();
     let zones_ep = format!(
@@ -204,6 +200,10 @@ pub async fn execute(
         body.insert("type", "A");
         body.insert("name", &dns.domain);
         body.insert("content", user_config.ip.as_ref().unwrap());
+        vlog(
+            format!("Updating `A` record for {}", &dns.domain).as_str(),
+            &app_config,
+        );
         let res = client
             .patch(dns_patch_ep)
             .json(&body)
