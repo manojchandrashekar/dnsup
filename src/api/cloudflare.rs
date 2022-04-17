@@ -94,6 +94,10 @@ pub async fn execute(
         header::HeaderValue::from_static("application/json"),
     );
     let client = reqwest::Client::new();
+    vlog(
+        format!("API: {}\n{}", zones_ep.as_str(), "").as_str(),
+        app_config,
+    );
     let res = client.get(zones_ep).headers(headers).send().await?;
     if res.status() != StatusCode::OK {
         vlog(
@@ -145,9 +149,10 @@ pub async fn execute(
             continue;
         }
         let zones_ep = format!(
-            "{}zones/{}/dns_records?type=A&page=1&per_page=100&order=type&direction=desc&match=all",
+            "{}zones/{}/dns_records?type=A&name={}&page=1&per_page=100&order=type&direction=desc&match=all",
             CF_API_ENDPOINT,
-            dns.zone.as_ref().unwrap().id
+            dns.zone.as_ref().unwrap().id,
+            &dns.domain
         );
         let mut headers = header::HeaderMap::new();
         headers.insert(
@@ -160,6 +165,10 @@ pub async fn execute(
             header::HeaderValue::from_static("application/json"),
         );
         let client = reqwest::Client::new();
+        vlog(
+            format!("API: {}\n{}", zones_ep.as_str(), "").as_str(),
+            app_config,
+        );
         let res = client.get(zones_ep).headers(headers).send().await?;
         let res_status = res.status().as_u16();
         let res_text = res.text().await.unwrap();
@@ -203,6 +212,10 @@ pub async fn execute(
         vlog(
             format!("Updating `A` record for {}", &dns.domain).as_str(),
             &app_config,
+        );
+        vlog(
+            format!("API: {}\n{:?}", dns_patch_ep.as_str(), &body).as_str(),
+            app_config,
         );
         let res = client
             .patch(dns_patch_ep)
