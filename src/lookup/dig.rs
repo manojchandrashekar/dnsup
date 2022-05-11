@@ -3,7 +3,10 @@ use std::{net::Ipv4Addr, process::Command};
 pub fn validate() {
     match Command::new("dig").arg("-v").output() {
         Err(e) => {
-            log::error!("{}. Verify that `dig` is installed and available in PATH.", e);
+            log::error!(
+                "{}. Verify that `dig` is installed and available in PATH.",
+                e
+            );
             std::process::exit(1);
         }
         Ok(output) => {
