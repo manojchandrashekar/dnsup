@@ -46,7 +46,7 @@ pub fn validate_config(user_config: &mut UserConfig, app_config: &AppConfig) {
             match user_config.lookup.provider.as_str() {
                 "opendns" => {
                     lookup::opendns::validate(user_config, app_config);
-                    vlog("Validating config: lookup provider -- Done", &app_config);
+                    vlog("Validating config: lookup provider -- Done", app_config);
                 }
                 _ => {
                     panic!("Unsupported lookup provider! Check config.");

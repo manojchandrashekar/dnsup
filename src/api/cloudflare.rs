@@ -211,7 +211,7 @@ pub async fn execute(
         body.insert("content", user_config.ip.to_string());
         vlog(
             format!("Updating `A` record for {}", &dns.domain).as_str(),
-            &app_config,
+            app_config,
         );
         vlog(
             format!("API: {}\n{:?}", dns_patch_ep.as_str(), &body).as_str(),

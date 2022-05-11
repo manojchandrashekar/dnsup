@@ -7,5 +7,5 @@ pub fn validate(user_config: &mut UserConfig, app_config: &AppConfig) {
         "myip.opendns.com".to_string(),
         "resolver1.opendns.com".to_string(),
     );
-    vlog( format!("IP: {}", user_config.ip).as_str(), app_config)
+    vlog(format!("IP: {}", user_config.ip).as_str(), app_config)
 }

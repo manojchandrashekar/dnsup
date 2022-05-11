@@ -20,10 +20,14 @@ pub struct AppConfig {
 
 impl Default for AppConfig {
     fn default() -> Self {
-        Self { 
+        Self {
             verbose: Default::default(),
-            config_file: dirs::config_dir().map(|path| path.join(".dnsup.toml")).unwrap_or("/tmp/dnsup.toml".into()),
-            custom_config: dirs::config_dir().map(|path| path.join(".dnsup.toml")).unwrap_or("/tmp/dnsup.toml".into()),
+            config_file: dirs::config_dir()
+                .map(|path| path.join(".dnsup.toml"))
+                .unwrap_or_else(|| "/tmp/dnsup.toml".into()),
+            custom_config: dirs::config_dir()
+                .map(|path| path.join(".dnsup.toml"))
+                .unwrap_or_else(|| "/tmp/dnsup.toml".into()),
         }
     }
 }
@@ -51,10 +55,13 @@ pub struct UserConfig {
 
 impl Default for UserConfig {
     fn default() -> Self {
-        Self { 
-            version: "0".to_string(), 
-            lookup: Lookup { method: "dig".to_string(), provider: "opendns".to_string() },
-            cloudflare: Default::default(), 
+        Self {
+            version: "0".to_string(),
+            lookup: Lookup {
+                method: "dig".to_string(),
+                provider: "opendns".to_string(),
+            },
+            cloudflare: Default::default(),
             ip: Ipv4Addr::new(0, 0, 0, 0),
         }
     }
@@ -100,7 +107,10 @@ async fn main() -> Result<()> {
     if app_config.config_file.is_file() {
         let contents: String = fs::read_to_string(config_file).expect("Error reading config file");
 
-        vlog("Config file read successful. Parsing contents...", &app_config);
+        vlog(
+            "Config file read successful. Parsing contents...",
+            &app_config,
+        );
 
         user_config = toml::from_str(contents.as_str())?;
 
@@ -113,14 +123,12 @@ async fn main() -> Result<()> {
             &app_config,
         );
         util::validate_config(&mut user_config, &app_config);
-    } else {
-        if app_config.custom_config != app_config.config_file {
-            vlog("Config file not found, creating one...", &app_config);
-            util::create_config_and_quit(&app_config.config_file, &app_config);
-        }
+    } else if app_config.custom_config != app_config.config_file {
+        vlog("Config file not found, creating one...", &app_config);
+        util::create_config_and_quit(&app_config.config_file, &app_config);
     }
 
-    if !user_config.cloudflare.is_none() {
+    if user_config.cloudflare.is_some() {
         vlog("Validating config: cloudflare", &app_config);
         match api::cloudflare::validate(&mut user_config, &app_config).await {
             Ok(_t) => {
