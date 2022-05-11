@@ -71,7 +71,10 @@ async fn main() -> Result<()> {
     }
 
     if !config_file.is_file() {
-        log::info!("Config file not found, creating one at {}", config_file.display());
+        log::info!(
+            "Config file not found, creating one at {}",
+            config_file.display()
+        );
         util::create_config_and_quit(config_file);
     }
 
