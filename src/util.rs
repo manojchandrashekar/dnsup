@@ -3,19 +3,7 @@ use core::panic;
 use std::{fs::File, io::Write, path::PathBuf, process::exit};
 
 pub fn create_config_and_quit(config_path: PathBuf) -> ! {
-    static CONFIG_SAMPLE: &str = r#"
-version = "1" # For handling changes in config structure
-ip = "0.0.0.0"
-
-[lookup]
-method = "dig" # Provision for additional methods in the future
-provider = "opendns"
-
-[cloudflare]
-auth_token = "cloudflare-auth-token"
-account_id = "cloudflare-account-id"
-domains = "comma-separated-domain-names-to-set-A-record-for"
-"#;
+    static CONFIG_SAMPLE: &str = include_str!("../dnsup.sample.toml");
     log::info!("Creating config file...");
     let mut config_file = match File::create(&config_path) {
         Err(why) => panic!("Unable to create config {}: {}", config_path.display(), why),
