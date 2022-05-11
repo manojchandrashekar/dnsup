@@ -206,9 +206,9 @@ pub async fn execute(
         );
         let client = reqwest::Client::new();
         let mut body = HashMap::new();
-        body.insert("type", "A");
-        body.insert("name", &dns.domain);
-        body.insert("content", user_config.ip.as_ref().unwrap());
+        body.insert("type", "A".to_string());
+        body.insert("name", dns.domain.clone());
+        body.insert("content", user_config.ip.to_string());
         vlog(
             format!("Updating `A` record for {}", &dns.domain).as_str(),
             &app_config,

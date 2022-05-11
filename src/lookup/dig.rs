@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{process::Command, net::Ipv4Addr};
 
 pub fn validate() {
     let output = Command::new("sh")
@@ -17,7 +17,7 @@ pub fn validate() {
     }
 }
 
-pub fn execute(options: String, domain: String, resolver: String) -> String {
+pub fn execute(options: String, domain: String, resolver: String) -> Ipv4Addr {
     let output = Command::new("sh")
         .arg("-c")
         .arg(format!("dig {} {} @{}", options, domain, resolver))
@@ -32,5 +32,5 @@ pub fn execute(options: String, domain: String, resolver: String) -> String {
             )
         )
     }
-    return String::from_utf8(output.stdout).unwrap().trim().to_string();
+    return String::from_utf8(output.stdout).unwrap().trim().parse().unwrap();
 }

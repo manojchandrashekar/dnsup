@@ -2,7 +2,7 @@ use crate::{lookup, AppConfig, UserConfig};
 use core::panic;
 use std::{fs::File, io::Write, path::PathBuf, process::exit};
 
-pub fn create_config_and_quit(config_path: &PathBuf, app_config: &AppConfig) {
+pub fn create_config_and_quit(config_path: &PathBuf, app_config: &AppConfig) -> ! {
     static CONFIG_SAMPLE: &str = "
 version = \"1\" # For handling changes in config structure
 
