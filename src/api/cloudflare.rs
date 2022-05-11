@@ -1,19 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{
-    util::{remove_whitespace, vlog},
-    AppConfig, UserConfig,
-};
+use crate::{util::remove_whitespace, UserConfig};
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
 
 static CF_API_ENDPOINT: &str = "https://api.cloudflare.com/client/v4/";
 
-pub async fn validate(
-    user_config: &mut UserConfig,
-    app_config: &AppConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    vlog("Validating config: cloudflare auth token", app_config);
+pub async fn validate(user_config: &mut UserConfig) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("Validating config: cloudflare auth token");
     let verify_ep = format!("{}user/tokens/verify", CF_API_ENDPOINT);
     let mut headers = header::HeaderMap::new();
     let cloudflare = user_config.cloudflare.as_mut().unwrap();
@@ -29,16 +23,10 @@ pub async fn validate(
     let client = reqwest::Client::new();
     let res = client.get(verify_ep).headers(headers).send().await?;
     if res.status() != StatusCode::OK {
-        vlog(
-            format!("\nError:\n{}", res.text().await.unwrap()).as_str(),
-            app_config,
-        );
+        log::error!("{}", res.text().await.unwrap());
         panic!("Cloudflare token invalid! Check config.");
     }
-    vlog(
-        "Validating config: cloudflare auth token -- Done",
-        app_config,
-    );
+    log::info!("Validating config: cloudflare auth token -- Done");
     Ok(())
 }
 
@@ -73,11 +61,8 @@ struct DNSUpdates {
     id: Option<String>,
 }
 
-pub async fn execute(
-    user_config: &UserConfig,
-    app_config: &AppConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    vlog("Processing cloudflare: get all zones", app_config);
+pub async fn execute(user_config: &UserConfig) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("Processing cloudflare: get all zones");
     let cloudflare = user_config.cloudflare.as_ref().unwrap();
     let zones_ep = format!(
         "{}zones?status=active&account.id={}&page=1&per_page=100&order=status&match=all",
@@ -94,16 +79,10 @@ pub async fn execute(
         header::HeaderValue::from_static("application/json"),
     );
     let client = reqwest::Client::new();
-    vlog(
-        format!("API: {}\n{}", zones_ep.as_str(), "").as_str(),
-        app_config,
-    );
+    log::info!("API: {}\n", zones_ep.as_str());
     let res = client.get(zones_ep).headers(headers).send().await?;
     if res.status() != StatusCode::OK {
-        vlog(
-            format!("\nError:\n{}", res.text().await.unwrap()).as_str(),
-            app_config,
-        );
+        log::info!("{}", res.text().await.unwrap());
         panic!("Unable to query Zone list from cloudflare. Check if permissions are set correctly for the auth token.");
     }
     let res_text = res.text().await.unwrap();
@@ -165,16 +144,13 @@ pub async fn execute(
             header::HeaderValue::from_static("application/json"),
         );
         let client = reqwest::Client::new();
-        vlog(
-            format!("API: {}\n{}", zones_ep.as_str(), "").as_str(),
-            app_config,
-        );
+        log::info!("API: {}\n", zones_ep.as_str());
         let res = client.get(zones_ep).headers(headers).send().await?;
         let res_status = res.status().as_u16();
         let res_text = res.text().await.unwrap();
 
         if res_status != StatusCode::OK {
-            vlog(format!("\nError:\n{}", res_text).as_str(), app_config);
+            log::info!("{}", res_text);
             println!(
                 "--ERR[{}]: Unable to query DNS list from cloudflare. Try again.",
                 dns.domain
@@ -209,14 +185,8 @@ pub async fn execute(
         body.insert("type", "A".to_string());
         body.insert("name", dns.domain.clone());
         body.insert("content", user_config.ip.to_string());
-        vlog(
-            format!("Updating `A` record for {}", &dns.domain).as_str(),
-            app_config,
-        );
-        vlog(
-            format!("API: {}\n{:?}", dns_patch_ep.as_str(), &body).as_str(),
-            app_config,
-        );
+        log::info!("Updating `A` record for {}", &dns.domain);
+        log::info!("API: {}\n{:?}", dns_patch_ep.as_str(), &body);
         let res = client
             .patch(dns_patch_ep)
             .json(&body)
@@ -227,7 +197,7 @@ pub async fn execute(
         let res_text = res.text().await.unwrap();
 
         if res_status != StatusCode::OK {
-            vlog(format!("\nError:\n{}", res_text).as_str(), app_config);
+            log::info!("{}", res_text);
             println!(
                 "--ERR[{}]: Unable to update the DNS `A` record.",
                 dns.domain

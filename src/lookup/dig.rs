@@ -1,19 +1,18 @@
 use std::{net::Ipv4Addr, process::Command};
 
 pub fn validate() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("dig -v")
-        .output()
-        .expect("Failed to validate lookup method: dig. Verify that `dig` is installed and available in PATH.");
-    if !output.status.success() {
-        panic!(
-            "{}",
-            format!(
-                "Failed to validate lookup method: dig. \nError: {}",
-                String::from_utf8(output.stderr).unwrap()
-            )
-        )
+    match Command::new("dig").arg("-v").output() {
+        Err(e) => {
+            log::error!("{}. Verify that `dig` is installed and available in PATH.", e);
+            std::process::exit(1);
+        }
+        Ok(output) => {
+            if !output.status.success() {
+                log::error!("Failed to validate lookup method: dig");
+                log::error!("{}", String::from_utf8(output.stderr).unwrap());
+                std::process::exit(1);
+            }
+        }
     }
 }
 
