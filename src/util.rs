@@ -2,7 +2,7 @@ use crate::{lookup, UserConfig};
 use core::panic;
 use std::{fs::File, io::Write, path::PathBuf, process::exit};
 
-pub fn create_config_and_quit(config_path: &PathBuf) -> ! {
+pub fn create_config_and_quit(config_path: PathBuf) -> ! {
     static CONFIG_SAMPLE: &str = r#"
 version = "1" # For handling changes in config structure
 ip = "0.0.0.0"
@@ -26,8 +26,8 @@ domains = "comma-separated-domain-names-to-set-A-record-for"
     match config_file.write_all(CONFIG_SAMPLE.as_bytes()) {
         Err(why) => panic!("Unable to create config {}: {}", config_path.display(), why),
         Ok(_) => {
-            println!("No config file was found. A sample file was created at: {}. Update the configuration and run dnsup again.", config_path.display());
             log::info!("Sample data written successfully.");
+            println!("No config file was found. A sample file was created at: {}. Update the configuration and run dnsup again.", config_path.display());
             exit(0);
         }
     }
