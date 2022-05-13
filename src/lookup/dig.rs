@@ -1,9 +1,9 @@
-use std::process::Command;
+use std::{net::Ipv4Addr, process::Command};
 
 pub fn validate() {
     let output = Command::new("sh")
         .arg("-c")
-        .arg(format!("{}", "dig -v"))
+        .arg("dig -v")
         .output()
         .expect("Failed to validate lookup method: dig. Verify that `dig` is installed and available in PATH.");
     if !output.status.success() {
@@ -17,7 +17,7 @@ pub fn validate() {
     }
 }
 
-pub fn execute(options: String, domain: String, resolver: String) -> String {
+pub fn execute(options: String, domain: String, resolver: String) -> Ipv4Addr {
     let output = Command::new("sh")
         .arg("-c")
         .arg(format!("dig {} {} @{}", options, domain, resolver))
@@ -32,5 +32,9 @@ pub fn execute(options: String, domain: String, resolver: String) -> String {
             )
         )
     }
-    return String::from_utf8(output.stdout).unwrap().trim().to_string();
+    return String::from_utf8(output.stdout)
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
 }
