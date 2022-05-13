@@ -10,8 +10,6 @@ mod lookup;
 mod util;
 use serde::Deserialize;
 
-use crate::util::vlog;
-
 pub struct AppConfig {
     verbose: bool,
     config_file: PathBuf,
@@ -23,10 +21,10 @@ impl Default for AppConfig {
         Self {
             verbose: Default::default(),
             config_file: dirs::config_dir()
-                .map(|path| path.join(".dnsup.toml"))
+                .map(|path| path.join("dnsup.toml"))
                 .unwrap_or_else(|| "/tmp/dnsup.toml".into()),
             custom_config: dirs::config_dir()
-                .map(|path| path.join(".dnsup.toml"))
+                .map(|path| path.join("dnsup.toml"))
                 .unwrap_or_else(|| "/tmp/dnsup.toml".into()),
         }
     }
@@ -71,6 +69,8 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    simple_logger::init_utc().expect("Logger failed to initialize!");
+
     // Default app config
     let mut app_config = AppConfig::default();
 
@@ -98,43 +98,39 @@ async fn main() -> Result<()> {
         ap.parse_args_or_exit();
     }
 
-    vlog("Reading config file...", &app_config);
     let config_file = if app_config.custom_config != app_config.config_file {
-        &app_config.custom_config
-    } else {
         &app_config.config_file
+    } else {
+        &app_config.custom_config
     };
+
+    log::info!("Reading config file - {}", config_file.display());
+
     if app_config.config_file.is_file() {
         let contents: String = fs::read_to_string(config_file).expect("Error reading config file");
 
-        vlog(
-            "Config file read successful. Parsing contents...",
-            &app_config,
-        );
+        log::info!("Config file read successful. Parsing contents...");
 
         user_config = toml::from_str(contents.as_str())?;
 
-        vlog(
-            format!(
-                "Config parsed successfully. (Version: {})",
-                user_config.version
-            )
-            .as_str(),
-            &app_config,
+        log::info!(
+            "Config parsed successfully. (Version: {})",
+            user_config.version
         );
-        util::validate_config(&mut user_config, &app_config);
+
+        util::validate_config(&mut user_config);
     } else if app_config.custom_config != app_config.config_file {
-        vlog("Config file not found, creating one...", &app_config);
-        util::create_config_and_quit(&app_config.config_file, &app_config);
+        log::info!("Config file not found, creating one...");
+        util::create_config_and_quit(&app_config.config_file);
     }
 
     if user_config.cloudflare.is_some() {
-        vlog("Validating config: cloudflare", &app_config);
-        match api::cloudflare::validate(&mut user_config, &app_config).await {
+        log::info!("Validating config: cloudflare");
+        match api::cloudflare::validate(&mut user_config).await {
             Ok(_t) => {
-                vlog("Validating config: cloudflare -- Done", &app_config);
-                vlog("Processing cloudflare...", &app_config);
-                match api::cloudflare::execute(&user_config, &app_config).await {
+                log::info!("Validating config: cloudflare -- Done");
+                log::info!("Processing cloudflare...");
+                match api::cloudflare::execute(&user_config).await {
                     Ok(_t) => {}
                     Err(_e) => {}
                 };
