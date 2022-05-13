@@ -27,21 +27,7 @@ pub struct UserConfig {
     version: String,
     lookup: Lookup,
     cloudflare: Option<Cloudflare>,
-    ip: std::net::Ipv4Addr,
-}
-
-impl Default for UserConfig {
-    fn default() -> Self {
-        Self {
-            version: "0".to_string(),
-            lookup: Lookup {
-                method: "dig".to_string(),
-                provider: "opendns".to_string(),
-            },
-            cloudflare: Default::default(),
-            ip: Ipv4Addr::new(0, 0, 0, 0),
-        }
-    }
+    ip: Ipv4Addr,
 }
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
