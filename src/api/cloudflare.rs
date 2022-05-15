@@ -109,22 +109,26 @@ pub async fn execute(user_config: &UserConfig) -> Result<(), Box<dyn std::error:
             .result
             .iter()
             .find(|z| names.contains(&z.name));
-        let zone_str = ZoneResponseResult {
-            name: (*zone.unwrap().name).to_string(),
-            id: (*zone.unwrap().id).to_string(),
-        };
-        let dns: DNSUpdates = DNSUpdates {
-            domain: domain.to_string(),
-            zone: Some(zone_str),
-            id: None,
-        };
-        dns_vec.push(dns);
+        if zone.is_some() {
+            let zone_str = ZoneResponseResult {
+                name: (*zone.unwrap().name).to_string(),
+                id: (*zone.unwrap().id).to_string(),
+            };
+            let dns: DNSUpdates = DNSUpdates {
+                domain: domain.to_string(),
+                zone: Some(zone_str),
+                id: None,
+            };
+            dns_vec.push(dns);
+        } else {
+            log::error!("Unable to find the zone for: {}", domain.to_string())
+        }
     }
 
     // TODO: Parallelize the API calls.
     for mut dns in dns_vec.iter_mut() {
         if dns.zone.is_none() {
-            println!("--ERR [{}]: Couldn't find Zone ID. Make sure the domain exists in your cloudflare account.", dns.domain);
+            log::error!("[{}]: Couldn't find Zone ID. Make sure the domain exists in your cloudflare account.", dns.domain);
             continue;
         }
         let zones_ep = format!(
@@ -149,19 +153,19 @@ pub async fn execute(user_config: &UserConfig) -> Result<(), Box<dyn std::error:
         let res_status = res.status().as_u16();
         let res_text = res.text().await.unwrap();
 
-        if res_status != StatusCode::OK {
-            log::info!("{}", res_text);
-            println!(
-                "--ERR[{}]: Unable to query DNS list from cloudflare. Try again.",
+        let dns_res: DNSResponse = serde_json::from_str(res_text.as_str())?;
+        if res_status != StatusCode::OK || dns_res.result.len() <= 0 {
+            log::error!(
+                "[{}]: Unable to query DNS list from cloudflare. Try again.",
                 dns.domain
             );
+        } else {
+            dns.id = Some((dns_res.result[0].id).to_string());
         };
-        let dns_res: DNSResponse = serde_json::from_str(res_text.as_str())?;
-        dns.id = Some((dns_res.result[0].id).to_string());
     }
     for dns in dns_vec.into_iter() {
         if dns.id.is_none() {
-            println!("--ERR [{}]: Couldn't find DNS ID for `A` record. Make sure an `A` record exists for the domain in cloudflare.", dns.domain);
+            log::error!("[{}]: Couldn't find DNS ID for `A` record. Make sure an `A` record exists for the domain in cloudflare.", dns.domain);
             continue;
         }
         let dns_patch_ep = format!(
@@ -198,10 +202,7 @@ pub async fn execute(user_config: &UserConfig) -> Result<(), Box<dyn std::error:
 
         if res_status != StatusCode::OK {
             log::info!("{}", res_text);
-            println!(
-                "--ERR[{}]: Unable to update the DNS `A` record.",
-                dns.domain
-            );
+            log::error!("[{}]: Unable to update the DNS `A` record.", dns.domain);
         };
     }
     Ok(())
