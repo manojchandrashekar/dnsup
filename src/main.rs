@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use api::cloudflare::Cloudflare;
 use argparse::{ArgumentParser, Store, StoreTrue};
 use std::fs;
@@ -23,8 +24,6 @@ pub struct UserConfig {
     cloudflare: Option<Cloudflare>,
     ip: Ipv4Addr,
 }
-
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -66,47 +65,21 @@ async fn main() -> Result<()> {
 
     log::info!("Reading config file - {}", config_file.display());
 
-    let contents = match fs::read_to_string(&config_file) {
-        Ok(contents) => {
-            log::info!("Config file read successful. Parsing contents...");
-            contents
-        }
-        Err(e) => {
-            log::error!("Error reading config file {} - {e}", config_file.display());
-            exit(1);
-        }
-    };
+    let contents = fs::read_to_string(&config_file)
+        .map_err(|e| anyhow!("Reading config file {} - {e}", config_file.display()))?;
 
-    let UserConfig {
-        version: _,
-        lookup: _,
-        cloudflare,
-        ip,
-    } = match toml::from_str(contents.as_str()) {
-        Ok(mut config) => {
-            util::validate_config(&mut config);
-            log::info!("Config parsed successfully. (Version: {})", config.version);
-            config
-        }
-        Err(e) => {
-            log::error!("Error reading config file {} - {e}", config_file.display());
-            exit(1);
-        }
-    };
+    log::info!("Config file read successful. Parsing contents...");
 
-    if let Some(mut cloudflare) = cloudflare {
+    let mut config: UserConfig = toml::from_str(contents.as_str())
+        .map_err(|e| anyhow!("Parsing config file {} - {e}", config_file.display()))?;
+    util::validate_config(&mut config)?;
+    log::info!("Config parsed successfully. (Version: {})", config.version);
+
+    if let Some(mut cloudflare) = config.cloudflare {
         log::info!("Validating config: cloudflare");
-        match cloudflare.validate().await {
-            Ok(_t) => {
-                log::info!("Validating config: cloudflare -- Done");
-                log::info!("Processing cloudflare...");
-                match cloudflare.execute(ip).await {
-                    Ok(_t) => {}
-                    Err(_e) => {}
-                };
-            }
-            Err(_e) => {}
-        };
+        cloudflare.validate().await?;
+        log::info!("Processing cloudflare...");
+        cloudflare.execute(config.ip).await?;
     } else {
         println!("No domain configurations found! Check config.");
         exit(0);
