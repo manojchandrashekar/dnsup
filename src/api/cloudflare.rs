@@ -1,8 +1,8 @@
-use std::{collections::HashMap, net::Ipv4Addr};
-
 use crate::util::remove_whitespace;
+use anyhow::{bail, Result};
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, net::Ipv4Addr};
 
 static CF_API_ENDPOINT: &str = "https://api.cloudflare.com/client/v4/";
 
@@ -45,7 +45,7 @@ struct DNSUpdates {
 }
 
 impl Cloudflare {
-    pub async fn validate(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn validate(&mut self) -> Result<()> {
         log::info!("Validating config: cloudflare auth token");
         let verify_ep = format!("{}user/tokens/verify", CF_API_ENDPOINT);
         let mut headers = header::HeaderMap::new();
@@ -61,13 +61,14 @@ impl Cloudflare {
         let res = client.get(verify_ep).headers(headers).send().await?;
         if res.status() != StatusCode::OK {
             log::error!("{}", res.text().await.unwrap());
-            panic!("Cloudflare token invalid! Check config.");
+            bail!("Cloudflare token invalid! Check config.")
+        } else {
+            log::info!("Validating config: cloudflare auth token -- Done");
+            Ok(())
         }
-        log::info!("Validating config: cloudflare auth token -- Done");
-        Ok(())
     }
 
-    pub async fn execute(&self, ip: Ipv4Addr) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn execute(&self, ip: Ipv4Addr) -> Result<()> {
         log::info!("Processing cloudflare: get all zones");
         let zones_ep = format!(
             "{}zones?status=active&account.id={}&page=1&per_page=100&order=status&match=all",
@@ -87,7 +88,7 @@ impl Cloudflare {
         let res = client.get(zones_ep).headers(headers).send().await?;
         if res.status() != StatusCode::OK {
             log::info!("{}", res.text().await.unwrap());
-            panic!("Unable to query Zone list from cloudflare. Check if permissions are set correctly for the auth token.");
+            bail!("Unable to query Zone list from cloudflare. Check if permissions are set correctly for the auth token.");
         }
         let res_text = res.text().await.unwrap();
         let zone_response: ZoneResponse = serde_json::from_str(res_text.as_str())?;
