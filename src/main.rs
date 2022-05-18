@@ -1,3 +1,4 @@
+use api::cloudflare::Cloudflare;
 use argparse::{ArgumentParser, Store, StoreTrue};
 use std::fs;
 use std::net::Ipv4Addr;
@@ -13,13 +14,6 @@ use serde::Deserialize;
 pub struct Lookup {
     method: String,
     provider: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Cloudflare {
-    auth_token: String,
-    account_id: String,
-    domains: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -83,7 +77,12 @@ async fn main() -> Result<()> {
         }
     };
 
-    let mut user_config: UserConfig = match toml::from_str(contents.as_str()) {
+    let UserConfig {
+        version: _,
+        lookup: _,
+        cloudflare,
+        ip,
+    } = match toml::from_str(contents.as_str()) {
         Ok(mut config) => {
             util::validate_config(&mut config);
             log::info!("Config parsed successfully. (Version: {})", config.version);
@@ -95,13 +94,13 @@ async fn main() -> Result<()> {
         }
     };
 
-    if user_config.cloudflare.is_some() {
+    if let Some(mut cloudflare) = cloudflare {
         log::info!("Validating config: cloudflare");
-        match api::cloudflare::validate(&mut user_config).await {
+        match cloudflare.validate().await {
             Ok(_t) => {
                 log::info!("Validating config: cloudflare -- Done");
                 log::info!("Processing cloudflare...");
-                match api::cloudflare::execute(&user_config).await {
+                match cloudflare.execute(ip).await {
                     Ok(_t) => {}
                     Err(_e) => {}
                 };
